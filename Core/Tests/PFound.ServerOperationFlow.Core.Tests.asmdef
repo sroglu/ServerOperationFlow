@@ -1,0 +1,16 @@
+{
+    "name": "PFound.ServerOperationFlow.Core.Tests",
+    "rootNamespace": "PFound.ServerOperationFlow.Core.Tests",
+    "references": [
+        "PFound.ServerOperationFlow.Core"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": true
+}

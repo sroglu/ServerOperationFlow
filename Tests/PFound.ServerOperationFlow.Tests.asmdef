@@ -1,0 +1,26 @@
+{
+    "name": "PFound.ServerOperationFlow.Tests",
+    "rootNamespace": "PFound.ServerOperationFlow.Tests",
+    "references": [
+        "PFound.ServerOperationFlow",
+        "PFound.ServerOperationFlow.Core",
+        "PFound.NetworkLayer"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll",
+        "MessagePack.dll",
+        "MessagePack.Annotations.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

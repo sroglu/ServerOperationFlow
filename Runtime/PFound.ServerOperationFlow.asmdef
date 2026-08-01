@@ -1,0 +1,17 @@
+{
+    "name": "PFound.ServerOperationFlow",
+    "rootNamespace": "PFound.ServerOperationFlow",
+    "references": [
+        "PFound.ServerOperationFlow.Core",
+        "PFound.NetworkLayer"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
