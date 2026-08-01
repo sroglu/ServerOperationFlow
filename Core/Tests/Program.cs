@@ -291,14 +291,17 @@ namespace PFound.ServerOperationFlow.Core.Tests
         static async Task AmbientHost_ResolvesContext_FromCurrent()
         {
             var factory = new ProbeTransportFactory();
-            var channels = new ProbeResultChannels();
+            var presenter = new ProbeFailurePresenter();
+            var sink = new ProbeSuccessSink();
             var analytics = new ProbeAnalytics();
-            var previous = ServerOperationHost.Current;
-            ServerOperationHost.Current = new ServerOperationHost(factory, channels)
-            {
-                Gate = ServerOperationGate.DedupOnly(),
-                Analytics = analytics,
-            };
+            var previous = ServerOperationHost<ServerOperationResult<ProbeOpResult>>.Current;
+            ServerOperationHost<ServerOperationResult<ProbeOpResult>>.Current =
+                new ServerOperationHost<ServerOperationResult<ProbeOpResult>>(factory, presenter)
+                {
+                    SuccessSink = sink,
+                    Gate = ServerOperationGate.DedupOnly(),
+                    Analytics = analytics,
+                };
 
             try
             {
@@ -307,13 +310,13 @@ namespace PFound.ServerOperationFlow.Core.Tests
 
                 TestKit.Check(run.Accepted && run.Result.IsSuccess, "ambient: flow ran to success with a host-resolved context");
                 TestKit.Check(factory.Transport.SendCount == 1, "ambient: the host's transport factory supplied the transport (sent once)");
-                TestKit.Check(channels.Sink.Count == 1, "ambient: the host's success sink fired");
+                TestKit.Check(sink.Count == 1, "ambient: the host's success sink fired");
                 TestKit.Check(analytics.Count == 1 && analytics.LastSuccess, "ambient: the host's analytics recorded the outcome");
                 TestKit.Check(op.Log.Contains("apply"), "ambient: the lifecycle applied the success");
             }
             finally
             {
-                ServerOperationHost.Current = previous;
+                ServerOperationHost<ServerOperationResult<ProbeOpResult>>.Current = previous;
             }
         }
     }

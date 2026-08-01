@@ -100,19 +100,6 @@ namespace PFound.ServerOperationFlow.Core.Tests
             => (IServerOperationTransport<TRequest, TResponse>)(object)Transport;
     }
 
-    /// <summary>Outcome channels that hand back one shared presenter + sink for <see cref="ServerOperationResult{ProbeOpResult}"/>.</summary>
-    internal sealed class ProbeResultChannels : IServerOperationResultChannels
-    {
-        public readonly ProbeFailurePresenter Presenter = new ProbeFailurePresenter();
-        public readonly ProbeSuccessSink Sink = new ProbeSuccessSink();
-
-        public IServerOperationFailurePresenter<TResult> FailurePresenter<TResult>() where TResult : IServerOperationResult
-            => (IServerOperationFailurePresenter<TResult>)(object)Presenter;
-
-        public IServerOperationSuccessSink<TResult> SuccessSink<TResult>() where TResult : IServerOperationResult
-            => (IServerOperationSuccessSink<TResult>)(object)Sink;
-    }
-
     /// <summary>A sample game result enum for the code-toast presenter tests — mirrors an Invalid=0 sentinel.</summary>
     internal enum ProbeOpResult
     {

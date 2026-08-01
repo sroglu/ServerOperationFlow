@@ -1,5 +1,7 @@
 namespace PFound.ServerOperationFlow.Core
 {
+    using System.Threading;
+
     /// <summary>How a single <c>RunAsync</c> ended.</summary>
     public enum ServerOperationDisposition
     {
@@ -49,6 +51,9 @@ namespace PFound.ServerOperationFlow.Core
         public IServerOperationSuccessSink<TResult> SuccessSink { get; set; } = new SilentSuccessSink<TResult>();
         public IServerOperationAnalytics Analytics { get; set; } = new SilentAnalytics();
         public ServerOperationGate Gate { get; set; } = ServerOperationGate.Disabled;
+
+        /// <summary>Ambient cancellation a RunAsync observes when its caller passes no explicit token (default: never cancels).</summary>
+        public CancellationToken Cancellation { get; set; }
 
         public ServerOperationContext(
             IServerOperationTransport<TRequest, TResponse> transport,

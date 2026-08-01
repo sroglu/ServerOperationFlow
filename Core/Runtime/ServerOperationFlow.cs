@@ -27,12 +27,13 @@ namespace PFound.ServerOperationFlow.Core
         readonly ServerOperationContext<TRequest, TResponse, TResult> _context;
 
         /// <summary>
-        /// The ambient ctor a game flow uses: it resolves the context from <see cref="ServerOperationHost.Current"/>
-        /// so the concrete flow's own ctor takes ONLY the game's parameters and the call site stays clean
-        /// (<c>await new SpendCoinsOperationFlow(amount, wallet).RunAsync()</c>). The host is configured once at boot.
+        /// The ambient ctor a game flow uses: it resolves the context from
+        /// <see cref="ServerOperationHost{TResult}.Current"/> so the concrete flow's own ctor takes ONLY the game's
+        /// parameters and the call site stays clean (<c>await new SpendCoinsOperationFlow(amount).RunAsync()</c>).
+        /// The host is configured once at boot.
         /// </summary>
         protected ServerOperationFlow()
-            : this(ServerOperationHost.Current.CreateContext<TRequest, TResponse, TResult>())
+            : this(ServerOperationHost<TResult>.Current.CreateContext<TRequest, TResponse>())
         {
         }
 
@@ -86,6 +87,10 @@ namespace PFound.ServerOperationFlow.Core
         /// <summary>Run the whole lifecycle to a terminal outcome.</summary>
         public async Task<ServerOperationRun<TResult>> RunAsync(CancellationToken cancellation = default)
         {
+            // Fall back to the ambient (gameloop) cancellation when the caller passes none; a cancel here never enters the gate.
+            CancellationToken token = cancellation.CanBeCanceled ? cancellation : _context.Cancellation;
+            token.ThrowIfCancellationRequested();
+
             // Step 1 — entry. The run policy refuses a duplicate that is already in flight.
             string key = DuplicateKey;
             if (!_context.Gate.TryEnter(key))
@@ -109,7 +114,7 @@ namespace PFound.ServerOperationFlow.Core
                 try
                 {
                     // Step 4 — send + await. The client does not decide success; the server does.
-                    TResponse response = await _context.Transport.SendAsync(request, cancellation);
+                    TResponse response = await _context.Transport.SendAsync(request, token);
                     Reply = response;
 
                     // Step 5 — interpret the response.
@@ -126,8 +131,8 @@ namespace PFound.ServerOperationFlow.Core
                     _context.Analytics.RecordOutcome(OperationName, outcome);
 
                     // Step 7 — optional cancellable post-effects.
-                    cancellation.ThrowIfCancellationRequested();
-                    await RunPostEffectsAsync(outcome, cancellation);
+                    token.ThrowIfCancellationRequested();
+                    await RunPostEffectsAsync(outcome, token);
 
                     return ServerOperationRun<TResult>.Completed(outcome);
                 }

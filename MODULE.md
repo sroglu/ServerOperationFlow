@@ -63,8 +63,8 @@ Namespaces: `PFound.ServerOperationFlow.Core` (lifecycle + seams), `PFound.Serve
 | `IServerOperationAnalytics` | Optional telemetry, fired on every terminal outcome. |
 | `ServerOperationGate` | The opt-in run policy: single-flight duplicate-guard + loading-indicator hook. `Disabled` = no gate. |
 | `IServerOperationLoadingIndicator` | The busy-indicator seam the gate drives (`Show` / `Hide`). |
-| `ServerOperationHost` | The ambient host (`Current`) a flow resolves its context from — mirrors `NetworkClient.Current`. Holds the transport factory + outcome channels + shared gate/analytics; the flow's parameterless base ctor calls `CreateContext<…>()`. Lets a flow be `new`ed with only the game's params. |
-| `IServerOperationTransportFactory` / `IServerOperationResultChannels` | The two game-supplied seams the host uses to build a context per flow (transport for the request/response pair; failure presenter + success sink for the result type). |
+| `ServerOperationHost<TResult>` | The ambient host (`Current`) a flow resolves its context from — mirrors `NetworkClient.Current`, generic over the game's single result type (so the failure presenter + success sink are held with their real type, no cast). Holds the transport factory + typed failure presenter + success sink + shared gate/analytics + an ambient `Cancellation` token; the flow's parameterless base ctor calls `CreateContext<TRequest,TResponse>()`. Lets a flow be `new`ed with only the game's params. |
+| `IServerOperationTransportFactory` | The game-supplied transport seam the host uses to build a context's transport per flow (the request/response pair). The failure presenter + success sink are set directly on the typed host — no channels indirection, no `object` bridge. |
 | `ClientPeerServerOperationTransport<TRequest,TResponse>` | **Adapter.** Binds the seam to `ClientPeer.CallAsync`; carries the `RequestMessage` / `ReplyMessage` constraints so the Core never does. The engine-free ambient transport factory (whose Core-side signature is constraint-free) builds it reflectively from the flow's concrete envelope types, which satisfy the constraints at runtime. |
 
 ## Use-case examples
@@ -329,8 +329,11 @@ share the same opcode→type catalog for the request/reply to decode.
   bound to opcodes via `MessageCatalog`, or emitted by NetworkLayer's Roslyn source generator from a compact
   `[RemoteProcedure]` declaration (DTOs + explicit keys + pooling envelopes + the pair `Register` + `Execute`), with a companion
   analyzer for wire-versioning/opcode rules. See NetworkLayer's MODULE.md "Message codegen".
-- **Cancellation covers post-effects, not the in-flight network hop.** The seam's `CancellationToken`
-  governs the cancellable post-effect phase; the underlying `ClientPeer.CallAsync` is deadline-bounded, so a
-  stuck request faults on its deadline rather than being cancelled mid-flight.
+- **Cancellation is ambient + gameloop-owned; covers entry + post-effects, not the in-flight network hop.**
+  A flow observes the host's ambient `Cancellation` token when its caller passes none (an explicit token to
+  `RunAsync` still wins). A cancel throws *before* the flow enters the single-flight gate — so a session end /
+  scene teardown / app pause aborts not-yet-started flows — and stops the cancellable post-effect phase. But the
+  underlying `ClientPeer.CallAsync` is deadline-bounded, so a request already in flight faults on its deadline
+  rather than being cancelled mid-flight.
 - **Single-threaded, pump-driven transport.** Inherited from NetworkLayer: no delivery happens without a
   per-frame `ClientPeer.Update()`.
